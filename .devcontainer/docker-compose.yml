@@ -1,0 +1,49 @@
+version: '3'
+
+services:
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VARIANT: 1.16
+        INSTALL_NODE: "false"
+        NODE_VERSION: "lts/*"
+    volumes:
+      - ..:/workspace:cached
+      
+    # Overrides default command so things don't shut down after the process ends.
+    command: sleep infinity
+
+    # Runs app on the same network as the database container, allows "forwardPorts" in devcontainer.json function.
+    network_mode: service:db
+
+    # Uncomment the next line to use a non-root user for all processes.
+    # user: node
+
+    # Use "forwardPorts" in **devcontainer.json** to forward an app port locally. 
+    # (Adding the "ports" property to this file will not forward from a Codespace.)
+
+  db:
+    image: mysql:latest
+    container_name: docker_mysql
+    restart: always
+    volumes:
+      - msyql-data:/var/lib/msyql/data
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+
+    # Add "forwardPorts": ["5432"] to **devcontainer.json** to forward PostgreSQL locally.
+    # (Adding the "ports" property to this file will not forward from a Codespace.)
+ 
+  redis:
+    image: redis:6.2.4-alpine3.13
+    container_name: docker_redis
+    restart: always
+    volumes:
+        - redis-data:/var/lib/redis/data
+
+
+volumes:
+    msyql-data:
+    redis-data:
