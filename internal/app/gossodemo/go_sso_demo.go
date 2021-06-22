@@ -1,30 +1,23 @@
 package gossodemo
 
 import (
-	"fmt"
+	"gossodemo/internal/pkg/redis"
 
-	"github.com/gofiber/fiber"
-	"github.com/gomodule/redigo/redis"
+	"github.com/gofiber/fiber/v2"
 )
 
+var redisTemplate redis.RedisTemplate
+var fiberApp *fiber.App
+
 func Boot() {
-	c1, err := redis.Dial("tcp", "docker_redis:6379")
-	if err != nil {
-		panic(err)
-	}
-	rec1, err := c1.Do("Get", "gwyy")
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(rec1)
+	redisTemplate = redis.NewRedisTemplate("127.0.0.1", 6379)
 
-	defer c1.Close()
+	fiberApp = fiber.New()
+	fiberApp.Listen(":3000")
 
-	app := fiber.New()
+}
 
-	app.Get("/", func(c *fiber.Ctx) {
-		c.Send("Hello, World!")
-	})
-
-	app.Listen(3000)
+func Stop() {
+	redisTemplate.Close()
+	fiberApp.Shutdown()
 }
