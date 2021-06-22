@@ -3,8 +3,8 @@ package redis
 import "testing"
 
 func TestTemplate(t *testing.T) {
-	redisTemplate := NewRedisTemplate("127.0.0.1", 6379)
-
+	Connect("127.0.0.1", 6379)
+	redisTemplate := Template
 	defer redisTemplate.Close()
 
 	redisTemplate.Set("testRRRR", "1231231")

@@ -7,22 +7,9 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-type RedisTemplate interface {
-	Close()
-
-	Set(key string, value interface{})
-
-	Get(key string) (val string)
-}
-
 type goRedisTemplate struct {
 	ctx       context.Context
 	rdbClient *redis.Client
-}
-
-func NewRedisTemplate(host string, port int32) RedisTemplate {
-	var template RedisTemplate = newGoRedisTemplate(host, port)
-	return template
 }
 
 func newGoRedisTemplate(host string, port int32) *goRedisTemplate {
