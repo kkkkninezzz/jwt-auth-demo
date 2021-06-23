@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"gossodemo/internal/app/gossodemo/model"
 	"log"
 	"time"
 
@@ -48,12 +49,19 @@ type RegisterInput struct {
 
 func Register(ctx *fiber.Ctx) error {
 	var input RegisterInput
-	if err := ctx.BodyParser(&input); err != nil {
-		return ctx.SendStatus(fiber.StatusBadRequest)
+	if err := bodyParserAndValidate(&input, ctx); err != nil {
+		return err
 	}
 
 	username := input.UserName
-	//password := input.Password
+	password := input.Password
 
-	return ctx.JSON(fiber.Map{"status": "success", "message": "Success login", "data": username})
+	userBase := new(model.UserBase)
+	userBase.Username = username
+	// TODO 加密
+	userBase.Password = password
+	// 生成salt
+	userBase.Salt = ""
+
+	return ctx.JSON(fiber.Map{"status": "success", "message": "Register Success", "data": username})
 }
