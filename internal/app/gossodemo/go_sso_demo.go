@@ -17,6 +17,7 @@ func Boot() {
 	fiberApp = fiber.New()
 	router.SetupRoutes(fiberApp)
 	log.Fatalln(fiberApp.Listen(":3000"))
+	log.Println("server is started!")
 
 	defer redis.Shutdown()
 
