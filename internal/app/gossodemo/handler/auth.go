@@ -9,14 +9,14 @@ import (
 )
 
 type LoginInput struct {
-	UserName string `json:"username"`
-	Password string `json:"password"`
+	UserName string `json:"username" validate:"required,min=3,max=32"`
+	Password string `json:"password" validate:"required,min=3,max=32"`
 }
 
 func Login(ctx *fiber.Ctx) error {
 	var input LoginInput
-	if err := ctx.BodyParser(&input); err != nil {
-		return ctx.SendStatus(fiber.StatusBadRequest)
+	if err := bodyParserAndValidate(&input, ctx); err != nil {
+		return err
 	}
 
 	username := input.UserName
@@ -39,4 +39,21 @@ func Login(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.JSON(fiber.Map{"status": "success", "message": "Success login", "data": t})
+}
+
+type RegisterInput struct {
+	UserName string `json:"username" validate:"required,min=3,max=32"`
+	Password string `json:"password" validate:"required,min=3,max=32"`
+}
+
+func Register(ctx *fiber.Ctx) error {
+	var input RegisterInput
+	if err := ctx.BodyParser(&input); err != nil {
+		return ctx.SendStatus(fiber.StatusBadRequest)
+	}
+
+	username := input.UserName
+	//password := input.Password
+
+	return ctx.JSON(fiber.Map{"status": "success", "message": "Success login", "data": username})
 }

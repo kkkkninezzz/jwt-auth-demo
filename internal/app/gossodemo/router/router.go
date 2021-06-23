@@ -9,12 +9,15 @@ import (
 )
 
 func SetupRoutes(app *fiber.App) {
+	handler.InitValidator()
+
 	api := app.Group("/api", logger.New())
 	api.Get("/", handler.Hello)
 
 	// auth
-	auth := app.Group("/auth")
+	auth := api.Group("/auth")
 	auth.Post("/login", handler.Login)
+	auth.Post("/register", handler.Register)
 
 	// Products
 	product := api.Group("/product")
