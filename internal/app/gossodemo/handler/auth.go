@@ -31,7 +31,7 @@ func Login(ctx *fiber.Ctx) error {
 	claims["admin"] = true
 	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
 
-	mySigningKey := []byte("AllYourBase")
+	mySigningKey := []byte("secret")
 	t, err := token.SignedString(mySigningKey)
 	if err != nil {
 		log.Println(err)

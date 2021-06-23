@@ -1,5 +1,7 @@
 package redis
 
+import "log"
+
 type RedisTemplate interface {
 	Close()
 
@@ -18,6 +20,7 @@ func newRedisTemplate(host string, port int32) RedisTemplate {
 
 func Connect(host string, port int32) {
 	Template = newRedisTemplate(host, port)
+	log.Println("Connection Opened to Redis")
 }
 
 func Shutdown() {
