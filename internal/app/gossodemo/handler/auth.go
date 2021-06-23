@@ -10,8 +10,8 @@ import (
 )
 
 type LoginInput struct {
-	UserName string `json:"username" validate:"required,min=3,max=32"`
-	Password string `json:"password" validate:"required,min=3,max=32"`
+	UserName string `json:"username" validate:"required,min=3,max=20"`
+	Password string `json:"password" validate:"required,min=3,max=20"`
 }
 
 func Login(ctx *fiber.Ctx) error {
@@ -43,8 +43,8 @@ func Login(ctx *fiber.Ctx) error {
 }
 
 type RegisterInput struct {
-	UserName string `json:"username" validate:"required,min=3,max=32"`
-	Password string `json:"password" validate:"required,min=3,max=32"`
+	UserName string `json:"username" validate:"required,min=3,max=20"`
+	Password string `json:"password" validate:"required,min=3,max=20"`
 }
 
 func Register(ctx *fiber.Ctx) error {
