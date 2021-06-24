@@ -43,6 +43,9 @@ func TestJwt(t *testing.T) {
 		secret, err := middleware.GenerateJwtSecret(salt)
 		if err != nil {
 			return nil, err
+		secret := middleware.GenerateJwtSecret(salt)
+		if secret == "" {
+			return nil, errors.New("Secret generate failed")
 		}
 		return []byte(secret), nil
 	})

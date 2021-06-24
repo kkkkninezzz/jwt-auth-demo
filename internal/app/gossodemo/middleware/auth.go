@@ -1,7 +1,9 @@
 package middleware
 
 import (
+	"crypto/md5"
 	"errors"
+	"fmt"
 	"gossodemo/internal/app/gossodemo/model"
 	"strings"
 	"time"
@@ -9,7 +11,6 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gofiber/fiber/v2"
 	jwtware "github.com/gofiber/jwt/v2"
-	"golang.org/x/crypto/bcrypt"
 )
 
 // Protected protect routes
@@ -28,11 +29,9 @@ func JWTAuthMiddleware() fiber.Handler {
 }
 
 // 生成jwt的秘钥
-func GenerateJwtSecret(salt string) (string, error) {
+func GenerateJwtSecret(salt string) string {
 	staticSecret := "secret"
-
-	bytes, err := bcrypt.GenerateFromPassword([]byte(salt+"."+staticSecret), 1)
-	return string(bytes), err
+	return fmt.Sprintf("%x", md5.Sum([]byte(salt+"."+staticSecret)))
 }
 
 // 生成jwt token

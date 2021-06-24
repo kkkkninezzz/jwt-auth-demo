@@ -64,8 +64,8 @@ func Login(ctx *fiber.Ctx) error {
 		return UnauthorizedError(ctx, "Invalid password", nil)
 	}
 
-	secret, err := middleware.GenerateJwtSecret(userBase.Salt)
-	if err != nil {
+	secret := middleware.GenerateJwtSecret(userBase.Salt)
+	if secret == "" {
 		return UnauthorizedError(ctx, "Generate secret failed", nil)
 	}
 
