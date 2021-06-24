@@ -1,6 +1,7 @@
 package database
 
 import (
+	"errors"
 	"log"
 
 	"gorm.io/driver/mysql"
@@ -23,4 +24,9 @@ func Connect(dsn string) {
 
 	DB = db
 	log.Println("Connection Opened to Database")
+}
+
+// 是否为记录没有找到的err
+func IsRecordNotFoundError(err error) bool {
+	return errors.Is(err, gorm.ErrRecordNotFound)
 }
