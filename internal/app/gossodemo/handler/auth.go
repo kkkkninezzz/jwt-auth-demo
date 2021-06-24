@@ -78,7 +78,7 @@ func Login(ctx *fiber.Ctx) error {
 	// 写入redis
 	// TODO 是否要进行过时的处理
 	redis.Template.Set(rediskey.FormatSaltRedisKey(userBase.ID), userBase.Salt)
-	return SuccessError(ctx, "Success login", t)
+	return SuccessError(ctx, "Success login", middleware.JWTAuthScheme+" "+t)
 }
 
 type RegisterInput struct {
