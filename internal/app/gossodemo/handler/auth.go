@@ -2,16 +2,42 @@ package handler
 
 import (
 	"gossodemo/internal/app/gossodemo/model"
+	"gossodemo/internal/pkg/database"
+	"gossodemo/internal/pkg/random/randstr"
 	"log"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gofiber/fiber/v2"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type LoginInput struct {
 	UserName string `json:"username" validate:"required,min=3,max=20"`
 	Password string `json:"password" validate:"required,min=3,max=20"`
+}
+
+func checkPasswordHash(userBase *model.UserBase, originPassword string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(userBase.Password), []byte(addSaltToPassword(originPassword, userBase.Salt)))
+	return err == nil
+}
+
+func getUserByUsername(u string) (*model.UserBase, error) {
+	db := database.DB
+	var userBase model.UserBase
+	result := db.Where(&model.UserBase{Username: u}).Find(&userBase)
+	if result.RowsAffected <= 0 {
+		return nil, nil
+	}
+
+	if err := result.Error; err != nil {
+		if database.IsRecordNotFoundError(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &userBase, nil
 }
 
 func Login(ctx *fiber.Ctx) error {
@@ -22,16 +48,27 @@ func Login(ctx *fiber.Ctx) error {
 
 	username := input.UserName
 	password := input.Password
-	if username != "kurisu9" || password != "123456" {
-		return ctx.SendStatus(fiber.StatusUnauthorized)
+
+	userBase, err := getUserByUsername(username)
+	if err != nil {
+		return UnauthorizedError(ctx, "Error on username", err)
+	}
+
+	if userBase == nil {
+		return UnauthorizedError(ctx, "User not found", username)
+	}
+
+	if !checkPasswordHash(userBase, password) {
+		return UnauthorizedError(ctx, "Invalid password", nil)
 	}
 
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
-	claims["username"] = username
-	claims["admin"] = true
+	claims["username"] = userBase.Username
+	claims["user_id"] = userBase.ID
 	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
 
+	// TODO 处理token生成的secret
 	mySigningKey := []byte("secret")
 	t, err := token.SignedString(mySigningKey)
 	if err != nil {
@@ -39,7 +76,7 @@ func Login(ctx *fiber.Ctx) error {
 		return ctx.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	return ctx.JSON(fiber.Map{"status": "success", "message": "Success login", "data": t})
+	return SuccessError(ctx, "Success login", t)
 }
 
 type RegisterInput struct {
@@ -58,10 +95,42 @@ func Register(ctx *fiber.Ctx) error {
 
 	userBase := new(model.UserBase)
 	userBase.Username = username
-	// TODO 加密
-	userBase.Password = password
-	// 生成salt
-	userBase.Salt = ""
 
-	return ctx.JSON(fiber.Map{"status": "success", "message": "Register Success", "data": username})
+	// 生成salt
+	salt, err := generateSalt(username)
+	if err != nil {
+		return InternalServerError(ctx, "Couldn't generate salt", err)
+	}
+	userBase.Salt = salt
+
+	// 加密
+	encryptPassword, err := hashPassword(password, userBase.Salt)
+	if err != nil {
+		return InternalServerError(ctx, "Couldn't hash password", err)
+	}
+	userBase.Password = encryptPassword
+
+	db := database.DB
+	if err := db.Create(&userBase).Error; err != nil {
+		return InternalServerError(ctx, "Couldn't create user", err)
+	}
+
+	return SuccessError(ctx, "Register Success", input)
+}
+
+func generateSalt(username string) (string, error) {
+	// TODO 读取配置
+	str := randstr.RandomAscii(20)
+
+	bytes, err := bcrypt.GenerateFromPassword([]byte(username+"."+str), 14)
+	return string(bytes), err
+}
+
+func addSaltToPassword(password string, salt string) string {
+	return password + "." + salt
+}
+
+func hashPassword(password string, salt string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(addSaltToPassword(password, salt)), 14)
+	return string(bytes), err
 }
