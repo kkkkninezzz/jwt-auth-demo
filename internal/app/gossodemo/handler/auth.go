@@ -1,13 +1,14 @@
 package handler
 
 import (
+	"gossodemo/internal/app/gossodemo/def/rediskey"
+	"gossodemo/internal/app/gossodemo/middleware"
 	"gossodemo/internal/app/gossodemo/model"
 	"gossodemo/internal/pkg/database"
 	"gossodemo/internal/pkg/random/randstr"
+	"gossodemo/internal/pkg/redis"
 	"log"
-	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -18,6 +19,7 @@ type LoginInput struct {
 }
 
 func checkPasswordHash(userBase *model.UserBase, originPassword string) bool {
+	// CompareHashAndPassword这方法是真滴慢，估计得考虑降低cost
 	err := bcrypt.CompareHashAndPassword([]byte(userBase.Password), []byte(addSaltToPassword(originPassword, userBase.Salt)))
 	return err == nil
 }
@@ -62,20 +64,20 @@ func Login(ctx *fiber.Ctx) error {
 		return UnauthorizedError(ctx, "Invalid password", nil)
 	}
 
-	token := jwt.New(jwt.SigningMethodHS256)
-	claims := token.Claims.(jwt.MapClaims)
-	claims["username"] = userBase.Username
-	claims["user_id"] = userBase.ID
-	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
+	secret, err := middleware.GenerateJwtSecret(userBase.Salt)
+	if err != nil {
+		return UnauthorizedError(ctx, "Generate secret failed", nil)
+	}
 
-	// TODO 处理token生成的secret
-	mySigningKey := []byte("secret")
-	t, err := token.SignedString(mySigningKey)
+	t, err := middleware.GenerateJwtToken(userBase, secret)
 	if err != nil {
 		log.Println(err)
 		return ctx.SendStatus(fiber.StatusInternalServerError)
 	}
 
+	// 写入redis
+	// TODO 是否要进行过时的处理
+	redis.Template.Set(rediskey.FormatSaltRedisKey(userBase.ID), userBase.Salt)
 	return SuccessError(ctx, "Success login", t)
 }
 
