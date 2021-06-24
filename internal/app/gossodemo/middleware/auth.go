@@ -14,8 +14,18 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-const TokenKey string = "user"
+const UserInfoKey string = "user"
 const JWTAuthScheme string = "Bearer"
+
+type UserSimpleInfo struct {
+	Username string `json:"username"`
+	UserId   uint   `json:"user_id"`
+}
+
+type UserClaims struct {
+	UserInfo UserSimpleInfo `json:"user_info"`
+	jwt.StandardClaims
+}
 
 // Protected protect routes
 func Protected() func(*fiber.Ctx) error {
@@ -35,27 +45,18 @@ func JWTAuthMiddleware() fiber.Handler {
 			return jwtError(c, err)
 		}
 
-		token, err := jwt.ParseWithClaims(auth, &jwt.MapClaims{}, func(t *jwt.Token) (interface{}, error) {
-			pMapClaims, ok := t.Claims.(*jwt.MapClaims)
+		token, err := jwt.ParseWithClaims(auth, &UserClaims{}, func(t *jwt.Token) (interface{}, error) {
+			userClaims, ok := t.Claims.(*UserClaims)
 			if !ok {
 				return nil, errors.New("not support Claims")
 			}
 
-			mapClaims := *pMapClaims
-			userId, keyExists := mapClaims["user_id"]
-			if !keyExists {
-				return nil, errors.New("user_id is not in Claims")
+			userId := userClaims.UserInfo.UserId
+			if userId <= 0 {
+				return nil, errors.New("missing or malformed JWT")
 			}
 
-			var uid uint
-			switch v := userId.(type) {
-			case float64:
-				uid = uint(v)
-			default:
-				return nil, errors.New("user_id type is not uint")
-			}
-
-			salt := redis.Template.Get(rediskey.FormatSaltRedisKey(uid))
+			salt := redis.Template.Get(rediskey.FormatSaltRedisKey(userId))
 			if salt == "" {
 				return nil, errors.New("not found salt")
 			}
@@ -69,7 +70,8 @@ func JWTAuthMiddleware() fiber.Handler {
 
 		if err == nil && token.Valid {
 			// Store user information from token into context.
-			c.Locals(TokenKey, token)
+			userClaims := token.Claims.(*UserClaims)
+			c.Locals(UserInfoKey, userClaims.UserInfo)
 			return c.Next()
 		}
 
@@ -85,11 +87,18 @@ func GenerateJwtSecret(salt string) string {
 
 // 生成jwt token
 func GenerateJwtToken(userBase *model.UserBase, secret string) (string, error) {
-	token := jwt.New(jwt.SigningMethodHS256)
-	claims := token.Claims.(jwt.MapClaims)
-	claims["username"] = userBase.Username
-	claims["user_id"] = userBase.ID
-	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
+	claims := UserClaims{
+		UserSimpleInfo{
+			Username: userBase.Username,
+			UserId:   userBase.ID,
+		},
+		jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(time.Hour * 72).Unix(),
+			Issuer:    "go-sso-demo",
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(secret))
 }
 
@@ -99,11 +108,11 @@ func jwtFromHeader(c *fiber.Ctx, header string, authScheme string) (string, erro
 	if len(auth) > l+1 && strings.EqualFold(auth[:l], authScheme) {
 		return auth[l+1:], nil
 	}
-	return "", errors.New("Missing or malformed JWT")
+	return "", errors.New("missing or malformed JWT")
 }
 
 func jwtError(c *fiber.Ctx, err error) error {
-	if err.Error() == "Missing or malformed JWT" {
+	if err.Error() == "missing or malformed JWT" {
 		c.Status(fiber.StatusBadRequest)
 		return c.JSON(fiber.Map{"status": "error", "message": "Missing or malformed JWT", "data": nil})
 
@@ -111,4 +120,9 @@ func jwtError(c *fiber.Ctx, err error) error {
 		c.Status(fiber.StatusUnauthorized)
 		return c.JSON(fiber.Map{"status": "error", "message": "Invalid or expired JWT", "data": nil})
 	}
+}
+
+// 获取从jwt中解析得到的用户信息
+func LocalUserInfo(c *fiber.Ctx) UserSimpleInfo {
+	return c.Locals(UserInfoKey).(UserSimpleInfo)
 }
