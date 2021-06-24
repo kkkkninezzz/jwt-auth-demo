@@ -4,27 +4,76 @@ import (
 	"crypto/md5"
 	"errors"
 	"fmt"
+	"gossodemo/internal/app/gossodemo/def/rediskey"
 	"gossodemo/internal/app/gossodemo/model"
+	"gossodemo/internal/pkg/redis"
 	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gofiber/fiber/v2"
-	jwtware "github.com/gofiber/jwt/v2"
 )
+
+const TokenKey string = "user"
+const JWTAuthScheme string = "Bearer"
 
 // Protected protect routes
 func Protected() func(*fiber.Ctx) error {
-	return jwtware.New(jwtware.Config{
-		SigningKey:   []byte("secret"),
-		ErrorHandler: jwtError,
-	})
+	/*
+		return jwtware.New(jwtware.Config{
+			SigningKey:   []byte("secret"),
+			ErrorHandler: jwtError,
+		})
+	*/
+	return JWTAuthMiddleware()
 }
 
 func JWTAuthMiddleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		return nil
+		auth, err := jwtFromHeader(c, fiber.HeaderAuthorization, JWTAuthScheme)
+		if err != nil {
+			return jwtError(c, err)
+		}
 
+		token, err := jwt.ParseWithClaims(auth, &jwt.MapClaims{}, func(t *jwt.Token) (interface{}, error) {
+			pMapClaims, ok := t.Claims.(*jwt.MapClaims)
+			if !ok {
+				return nil, errors.New("not support Claims")
+			}
+
+			mapClaims := *pMapClaims
+			userId, keyExists := mapClaims["user_id"]
+			if !keyExists {
+				return nil, errors.New("user_id is not in Claims")
+			}
+
+			var uid uint
+			switch v := userId.(type) {
+			case float64:
+				uid = uint(v)
+			default:
+				return nil, errors.New("user_id type is not uint")
+			}
+
+			salt := redis.Template.Get(rediskey.FormatSaltRedisKey(uid))
+			if salt == "" {
+				return nil, errors.New("not found salt")
+			}
+
+			secret := GenerateJwtSecret(salt)
+			if secret == "" {
+				return nil, errors.New("secret generate failed")
+			}
+			return []byte(secret), nil
+		})
+
+		if err == nil && token.Valid {
+			// Store user information from token into context.
+			c.Locals(TokenKey, token)
+			return c.Next()
+		}
+
+		return jwtError(c, err)
 	}
 }
 
