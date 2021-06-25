@@ -16,33 +16,21 @@ func TestJwt(t *testing.T) {
 
 	token, err := jwt.ParseWithClaims(auth, &jwt.MapClaims{}, func(t *jwt.Token) (interface{}, error) {
 
-		pMapClaims, ok := t.Claims.(*jwt.MapClaims)
+		userClaims, ok := t.Claims.(*middleware.UserClaims)
 		if !ok {
-			return nil, errors.New("Not support Claims")
+			return nil, errors.New("not support Claims")
 		}
 
-		mapClaims := *pMapClaims
-		userId, keyExists := mapClaims["user_id"]
-		if !keyExists {
-			return nil, errors.New("User_id is not in Claims")
+		userId := userClaims.UserInfo.UserId
+		if userId <= 0 {
+			return nil, errors.New("missing or malformed JWT")
 		}
 
-		var uid uint
-		switch v := userId.(type) {
-		case float64:
-			uid = uint(v)
-		default:
-			return nil, errors.New("User_id type is not uint")
-		}
-
-		salt := redis.Template.Get(rediskey.FormatSaltRedisKey(uid))
+		salt := redis.Template.Get(rediskey.FormatSaltRedisKey(userId))
 		if salt == "" {
 			return nil, errors.New("Not found salt")
 		}
 
-		secret, err := middleware.GenerateJwtSecret(salt)
-		if err != nil {
-			return nil, err
 		secret := middleware.GenerateJwtSecret(salt)
 		if secret == "" {
 			return nil, errors.New("Secret generate failed")
