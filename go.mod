@@ -1,4 +1,4 @@
-module gossodemo
+module authjwtdemo
 
 go 1.16
 

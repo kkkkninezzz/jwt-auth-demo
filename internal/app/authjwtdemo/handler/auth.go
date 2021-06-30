@@ -1,12 +1,12 @@
 package handler
 
 import (
-	"gossodemo/internal/app/gossodemo/def/rediskey"
-	"gossodemo/internal/app/gossodemo/middleware"
-	"gossodemo/internal/app/gossodemo/model"
-	"gossodemo/internal/pkg/database"
-	"gossodemo/internal/pkg/random/randstr"
-	"gossodemo/internal/pkg/redis"
+	"authjwtdemo/internal/app/authjwtdemo/def/rediskey"
+	"authjwtdemo/internal/app/authjwtdemo/middleware"
+	"authjwtdemo/internal/app/authjwtdemo/model"
+	"authjwtdemo/internal/pkg/database"
+	"authjwtdemo/internal/pkg/random/randstr"
+	"authjwtdemo/internal/pkg/redis"
 	"log"
 	"time"
 

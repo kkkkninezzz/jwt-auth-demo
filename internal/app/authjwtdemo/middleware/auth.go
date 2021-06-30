@@ -1,13 +1,13 @@
 package middleware
 
 import (
+	"authjwtdemo/internal/app/authjwtdemo/def/rediskey"
+	"authjwtdemo/internal/app/authjwtdemo/model"
+	"authjwtdemo/internal/pkg/redis"
+	"authjwtdemo/internal/pkg/timeutil"
 	"crypto/md5"
 	"errors"
 	"fmt"
-	"gossodemo/internal/app/gossodemo/def/rediskey"
-	"gossodemo/internal/app/gossodemo/model"
-	"gossodemo/internal/pkg/redis"
-	"gossodemo/internal/pkg/timeutil"
 	"strings"
 	"time"
 

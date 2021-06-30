@@ -1,10 +1,10 @@
 package middleware_test
 
 import (
+	"authjwtdemo/internal/app/authjwtdemo/def/rediskey"
+	"authjwtdemo/internal/app/authjwtdemo/middleware"
+	"authjwtdemo/internal/pkg/redis"
 	"errors"
-	"gossodemo/internal/app/gossodemo/def/rediskey"
-	"gossodemo/internal/app/gossodemo/middleware"
-	"gossodemo/internal/pkg/redis"
 	"testing"
 
 	"github.com/dgrijalva/jwt-go"
