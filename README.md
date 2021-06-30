@@ -1,2 +1,2 @@
-# go-sso-demo
- 基于go-fiber的sso单点登录系统
+# jwt-auth-demo
+ 基于go-fiber + jwt的登录验证系统
