@@ -15,15 +15,15 @@ var fiberApp *fiber.App
 
 func Boot(configPath string) {
 	config.Init(configPath)
-
-	redis.Connect("127.0.0.1", 6379)
+	c := config.Config
+	redis.Connect(c.RedisConfig.Host, c.RedisConfig.Port)
 	// 初始化数据库
-	database.Connect("root:123456@tcp(127.0.0.1:3306)/demo-orm?charset=utf8mb4&parseTime=True&loc=Local")
+	database.Connect(c.MysqlConfig.Dsn, c.MysqlConfig.TablePrefix, c.MysqlConfig.SingularTable)
 	model.Init()
 
 	fiberApp = fiber.New()
 	router.SetupRoutes(fiberApp)
-	log.Fatalln(fiberApp.Listen(":3000"))
+	log.Fatalln(fiberApp.Listen(c.FiberAddr))
 	log.Println("server is started!")
 
 	defer redis.Shutdown()

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"authjwtdemo/internal/app/authjwtdemo/config"
 	"authjwtdemo/internal/app/authjwtdemo/def/rediskey"
 	"authjwtdemo/internal/app/authjwtdemo/middleware"
 	"authjwtdemo/internal/app/authjwtdemo/model"
@@ -74,7 +75,7 @@ func Login(ctx *fiber.Ctx) error {
 		return UnauthorizedError(ctx, "Generate secret failed", nil)
 	}
 
-	t, err := middleware.GenerateJwtToken(userBase, secret, tokenExpiration)
+	t, err := middleware.GenerateJwtToken(userBase, secret, config.Config.JwtConfig.TokenExpiration)
 	if err != nil {
 		log.Println(err)
 		return ctx.SendStatus(fiber.StatusInternalServerError)
@@ -82,7 +83,7 @@ func Login(ctx *fiber.Ctx) error {
 
 	// 写入redis
 	// 进行过时的处理
-	redis.Template.SetEX(rediskey.FormatJwtSaltRedisKey(userBase.ID), jwtSalt, tokenExpiration)
+	redis.Template.SetEX(rediskey.FormatJwtSaltRedisKey(userBase.ID), jwtSalt, config.Config.JwtConfig.TokenSaltExpiration)
 	return SuccessError(ctx, "Success login", middleware.JWTAuthScheme+" "+t)
 }
 

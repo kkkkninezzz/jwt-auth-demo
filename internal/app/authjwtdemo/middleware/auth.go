@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"authjwtdemo/internal/app/authjwtdemo/config"
 	"authjwtdemo/internal/app/authjwtdemo/def/rediskey"
 	"authjwtdemo/internal/app/authjwtdemo/model"
 	"authjwtdemo/internal/pkg/redis"
@@ -43,7 +44,8 @@ func JWTAuthMiddleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		auth, err := jwtFromHeader(c, fiber.HeaderAuthorization, JWTAuthScheme)
 		if err != nil {
-			return jwtError(c, err)
+			c.Status(fiber.StatusBadRequest)
+			return c.JSON(fiber.Map{"status": "error", "message": "Missing or malformed JWT", "data": nil})
 		}
 
 		token, err := jwt.ParseWithClaims(auth, &UserClaims{}, func(t *jwt.Token) (interface{}, error) {
@@ -54,7 +56,7 @@ func JWTAuthMiddleware() fiber.Handler {
 
 			userId := userClaims.UserInfo.UserId
 			if userId <= 0 {
-				return nil, errors.New("missing or malformed JWT")
+				return nil, errors.New("invalid user id ")
 			}
 
 			salt := redis.Template.Get(rediskey.FormatJwtSaltRedisKey(userId))
@@ -76,7 +78,8 @@ func JWTAuthMiddleware() fiber.Handler {
 			return c.Next()
 		}
 
-		return jwtError(c, err)
+		c.Status(fiber.StatusUnauthorized)
+		return c.JSON(fiber.Map{"status": "error", "message": "Invalid or expired JWT", "data": nil})
 	}
 }
 
@@ -87,7 +90,7 @@ func GenerateJwtSecretSalt(userSalt string) string {
 
 // 生成jwt的秘钥
 func GenerateJwtSecret(salt string) string {
-	staticSecret := "secret"
+	staticSecret := config.Config.JwtConfig.PrivateSecret
 	return fmt.Sprintf("%x", md5.Sum([]byte(salt+"."+staticSecret)))
 }
 
@@ -100,7 +103,7 @@ func GenerateJwtToken(userBase *model.UserBase, secret string, expiration time.D
 		},
 		jwt.StandardClaims{
 			ExpiresAt: timeutil.NextTimeSeconds(expiration),
-			Issuer:    "go-sso-demo",
+			Issuer:    config.Config.JwtConfig.Issuer,
 		},
 	}
 
@@ -115,17 +118,6 @@ func jwtFromHeader(c *fiber.Ctx, header string, authScheme string) (string, erro
 		return auth[l+1:], nil
 	}
 	return "", errors.New("missing or malformed JWT")
-}
-
-func jwtError(c *fiber.Ctx, err error) error {
-	if err.Error() == "missing or malformed JWT" {
-		c.Status(fiber.StatusBadRequest)
-		return c.JSON(fiber.Map{"status": "error", "message": "Missing or malformed JWT", "data": nil})
-
-	} else {
-		c.Status(fiber.StatusUnauthorized)
-		return c.JSON(fiber.Map{"status": "error", "message": "Invalid or expired JWT", "data": nil})
-	}
 }
 
 // 获取从jwt中解析得到的用户信息
