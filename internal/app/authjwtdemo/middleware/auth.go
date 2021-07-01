@@ -88,7 +88,7 @@ func GenerateJwtSecretSalt(userSalt string) string {
 	return fmt.Sprintf("%s.%d", userSalt, timeutil.CurrentTimeMillis())
 }
 
-// 生成jwt的秘钥
+// 生成jwt的密钥
 func GenerateJwtSecret(salt string) string {
 	staticSecret := config.Config.JwtConfig.PrivateSecret
 	return fmt.Sprintf("%x", md5.Sum([]byte(salt+"."+staticSecret)))

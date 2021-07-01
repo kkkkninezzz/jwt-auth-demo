@@ -9,14 +9,10 @@ import (
 	"authjwtdemo/internal/pkg/random/randstr"
 	"authjwtdemo/internal/pkg/redis"
 	"log"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/crypto/bcrypt"
 )
-
-// token过期时间
-var tokenExpiration = time.Hour * 72
 
 type LoginInput struct {
 	UserName string `json:"username" validate:"required,min=3,max=20"`
@@ -127,7 +123,7 @@ func Register(ctx *fiber.Ctx) error {
 }
 
 func generateSalt(username string) (string, error) {
-	// TODO 读取配置
+	// TODO 随机字符串的长度可以考虑读取配置
 	str := randstr.RandomAscii(20)
 
 	bytes, err := bcrypt.GenerateFromPassword([]byte(username+"."+str), 14)
