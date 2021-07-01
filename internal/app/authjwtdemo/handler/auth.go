@@ -111,12 +111,12 @@ func Register(ctx *fiber.Ctx) error {
 	}
 	userBase.Salt = salt
 
-	// 加密
-	encryptPassword, err := hashPassword(password, userBase.Salt)
+	// 对密码进行hash
+	hashedPassword, err := hashPassword(password, userBase.Salt)
 	if err != nil {
 		return InternalServerError(ctx, "Couldn't hash password", err)
 	}
-	userBase.Password = encryptPassword
+	userBase.Password = hashedPassword
 
 	db := database.DB
 	if err := db.Create(&userBase).Error; err != nil {
