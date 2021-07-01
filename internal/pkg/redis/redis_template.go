@@ -13,6 +13,8 @@ type RedisTemplate interface {
 	SetEX(key string, value interface{}, expiration time.Duration)
 
 	Get(key string) (val string)
+
+	Del(key string)
 }
 
 // 对外部使用的模板类

@@ -54,3 +54,10 @@ func (template *goRedisTemplate) SetEX(key string, value interface{}, expiration
 		panic(err)
 	}
 }
+
+func (template *goRedisTemplate) Del(key string) {
+	err := template.rdbClient.Del(template.ctx, key).Err()
+	if err != nil {
+		panic(err)
+	}
+}

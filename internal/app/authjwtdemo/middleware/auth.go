@@ -74,7 +74,7 @@ func JWTAuthMiddleware() fiber.Handler {
 		if err == nil && token.Valid {
 			// Store user information from token into context.
 			userClaims := token.Claims.(*UserClaims)
-			c.Locals(UserInfoKey, userClaims.UserInfo)
+			c.Locals(UserInfoKey, &userClaims.UserInfo)
 			return c.Next()
 		}
 

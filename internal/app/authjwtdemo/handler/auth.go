@@ -142,3 +142,9 @@ func hashPassword(password string, salt string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(addSaltToPassword(password, salt)), 14)
 	return string(bytes), err
 }
+
+func Logout(ctx *fiber.Ctx) error {
+	userInfo := ctx.Locals(middleware.UserInfoKey).(*middleware.UserSimpleInfo)
+	redis.Template.Del(rediskey.FormatJwtSaltRedisKey(userInfo.UserId))
+	return SuccessError(ctx, "Logout success", userInfo.UserId)
+}
