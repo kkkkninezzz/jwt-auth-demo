@@ -7,5 +7,5 @@ import (
 
 func main() {
 	log.SetFlags(log.LstdFlags)
-	authjwtdemo.Boot()
+	authjwtdemo.Boot("../../configs/app.yaml")
 }

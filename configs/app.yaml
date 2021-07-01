@@ -1,0 +1,16 @@
+fiber_addr: ":3000"
+redis_config:
+  host: "127.0.0.1"
+  port: 6379
+  password: ""
+
+mysql_config:
+  dsn: "root:123456@tcp(127.0.0.1:3306)/auth_jwt_demo?charset=utf8mb4&parseTime=True&loc=Local"
+  table_prefix: "t_"
+  singular_table: True
+
+jwt_config:
+  token_salt_expiration: 72
+  token_expiration: 72
+  private_secret: "private secret"
+  issuer: "auth jwt demo"

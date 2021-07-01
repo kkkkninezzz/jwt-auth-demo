@@ -1,6 +1,7 @@
 package authjwtdemo
 
 import (
+	"authjwtdemo/internal/app/authjwtdemo/config"
 	"authjwtdemo/internal/app/authjwtdemo/model"
 	"authjwtdemo/internal/app/authjwtdemo/router"
 	"authjwtdemo/internal/pkg/database"
@@ -12,7 +13,9 @@ import (
 
 var fiberApp *fiber.App
 
-func Boot() {
+func Boot(configPath string) {
+	config.Init(configPath)
+
 	redis.Connect("127.0.0.1", 6379)
 	// 初始化数据库
 	database.Connect("root:123456@tcp(127.0.0.1:3306)/demo-orm?charset=utf8mb4&parseTime=True&loc=Local")
